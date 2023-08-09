@@ -11,6 +11,7 @@ import (
 type CreateAuthorInput struct {
 	FirstName string    `json:"first_name" binding:"required"`
 	LastName  string    `json:"last_name" binding:"required"`
+	Surname   string    `json:"last_name" binding:"required"`
 	BirthDay  time.Time `json:"birth_day" binding:"required"`
 }
 
