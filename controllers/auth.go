@@ -1,32 +1,30 @@
 package controllers
 
 import (
-	"bookstore/services"
+	"bookstore/models"
+	"net/http"
 
 	jwt "github.com/appleboy/gin-jwt/v2"
 	"github.com/gin-gonic/gin"
 )
 
 type UserLoginInput struct {
-	Username string `form:"username" json:"username" binding:"required"`
+	Email    string `form:"email" json:"email" binding:"required"`
 	Password string `form:"password" json:"password" binding:"required"`
 }
 
 func LoginHandler(c *gin.Context) (interface{}, error) {
-	var loginVals UserLoginInput
-	if err := c.ShouldBind(&loginVals); err != nil {
+	var user models.User
+	var userLoginInput UserLoginInput
+
+	if err := c.ShouldBind(&userLoginInput); err != nil {
 		return "", jwt.ErrMissingLoginValues
 	}
-	userID := loginVals.Username
-	password := loginVals.Password
 
-	if (userID == "admin" && password == "admin") || (userID == "test" && password == "test") {
-		return &services.User{
-			UserName:  userID,
-			LastName:  "Bo-Yi",
-			FirstName: "Wu",
-		}, nil
+	if err := models.DB.Where("email = ?", userLoginInput.Email).Where("password = ?", userLoginInput.Password).First(&user).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User not found!"})
+		return nil, jwt.ErrFailedAuthentication
 	}
 
-	return nil, jwt.ErrFailedAuthentication
+	return user, nil
 }

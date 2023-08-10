@@ -1,6 +1,8 @@
 package services
 
 import (
+	"bookstore/models"
+	"fmt"
 	"log"
 	"time"
 
@@ -8,45 +10,41 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// User demo
-type User struct {
-	UserName  string
-	FirstName string
-	LastName  string
-}
-
-var IdentityKey = "id"
-
 func SetupAuth(authenticatorHandler func(c *gin.Context) (interface{}, error)) (*jwt.GinJWTMiddleware, error) {
 	authMiddleware, err := jwt.New(&jwt.GinJWTMiddleware{
 		Realm:       "test zone",
 		Key:         []byte("secret key"),
 		Timeout:     time.Hour,
 		MaxRefresh:  time.Hour,
-		IdentityKey: IdentityKey,
+		IdentityKey: models.UserIdkentityKey,
 		PayloadFunc: func(data interface{}) jwt.MapClaims {
-			if v, ok := data.(*User); ok {
+			fmt.Println("PayloadFunc")
+			if v, ok := data.(*models.User); ok {
 				return jwt.MapClaims{
-					IdentityKey: v.UserName,
+					models.UserIdkentityKey: v.Email,
 				}
 			}
 			return jwt.MapClaims{}
 		},
 		IdentityHandler: func(c *gin.Context) interface{} {
+			fmt.Println("IdentityHandler")
 			claims := jwt.ExtractClaims(c)
-			return &User{
-				UserName: claims[IdentityKey].(string),
+			return &models.User{
+				Email: claims[models.UserIdkentityKey].(string),
 			}
 		},
 		Authenticator: authenticatorHandler,
 		Authorizator: func(data interface{}, c *gin.Context) bool {
-			if v, ok := data.(*User); ok && v.UserName == "admin" {
+			fmt.Println("Authorizator")
+			v, ok := data.(*models.User)
+			if ok && v.Role == "admin" {
 				return true
 			}
 
 			return false
 		},
 		Unauthorized: func(c *gin.Context, code int, message string) {
+			fmt.Println("Unauthorized")
 			c.JSON(code, gin.H{
 				"code":    code,
 				"message": message,
