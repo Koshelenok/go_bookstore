@@ -20,6 +20,7 @@ func main() {
 
 	r.GET("/author", controllers.FindAuthors)
 	r.POST("/author", controllers.CreateAuthor)
+	r.DELETE("/author/:id", controllers.DeleteAuthor)
 
 	r.Run()
 }

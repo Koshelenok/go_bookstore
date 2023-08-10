@@ -8,18 +8,18 @@ import (
 )
 
 type CreateBookInput struct {
-	Title  string `json:"title" binding:"required"`
-	Author string `json:"author" binding:"required"`
+	Title  string `form:"title" binding:"required"`
+	Author string `form:"author" binding:"required"`
 }
 
 type UpdateBookUnput struct {
-	Title  string `json:"title"`
-	Author string `json:"author"`
+	Title  string `form:"title"`
+	Author string `form:"author"`
 }
 
 func CreateBook(c *gin.Context) {
 	var input CreateBookInput
-	if err := c.ShouldBindJSON(&input); err != nil {
+	if err := c.Bind(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -39,7 +39,7 @@ func UpdateBook(c *gin.Context) {
 	}
 
 	var input UpdateBookUnput
-	if err := c.ShouldBindJSON(&input); err != nil {
+	if err := c.Bind(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
 
