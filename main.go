@@ -3,6 +3,7 @@ package main
 import (
 	"bookstore/controllers"
 	"bookstore/models"
+	"bookstore/services"
 
 	"github.com/gin-gonic/gin"
 )
@@ -11,16 +12,29 @@ func main() {
 	r := gin.Default()
 
 	models.ConnectDatabase()
+	authMiddleware, _ := services.SetupAuth(controllers.LoginHandler)
 
-	r.GET("/books", controllers.FindBooks)
-	r.POST("/books", controllers.CreateBook)
-	r.GET("/books/:id", controllers.FindBook)
-	r.PATCH("/books/:id", controllers.UpdateBook)
-	r.DELETE("/books/:id", controllers.DeleteBook)
+	r.POST("/login", authMiddleware.LoginHandler)
 
-	r.GET("/author", controllers.FindAuthors)
-	r.POST("/author", controllers.CreateAuthor)
-	r.DELETE("/author/:id", controllers.DeleteAuthor)
+	auth := r.Group("")
+
+	// the jwt middleware
+	// Refresh time can be longer than token timeout
+	auth.GET("/refresh_token", authMiddleware.RefreshHandler)
+	auth.Use(authMiddleware.MiddlewareFunc())
+	{
+		auth.GET("/hello", controllers.HelloHandler)
+
+		auth.GET("/books", controllers.FindBooks)
+		auth.POST("/books", controllers.CreateBook)
+		auth.GET("/books/:id", controllers.FindBook)
+		auth.PATCH("/books/:id", controllers.UpdateBook)
+		auth.DELETE("/books/:id", controllers.DeleteBook)
+
+		auth.GET("/author", controllers.FindAuthors)
+		auth.POST("/author", controllers.CreateAuthor)
+		auth.DELETE("/author/:id", controllers.DeleteAuthor)
+	}
 
 	r.Run()
 }
