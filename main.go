@@ -14,13 +14,13 @@ func main() {
 	models.ConnectDatabase()
 	authMiddleware, _ := services.SetupAuth(controllers.LoginHandler)
 
-	r.POST("/login", authMiddleware.LoginHandler)
+	r.POST("/api/login", authMiddleware.LoginHandler)
 
-	auth := r.Group("")
+	auth := r.Group("/api")
 
 	// the jwt middleware
 	// Refresh time can be longer than token timeout
-	auth.GET("/refresh_token", authMiddleware.RefreshHandler)
+	auth.GET("/api/refresh_token", authMiddleware.RefreshHandler)
 	auth.Use(authMiddleware.MiddlewareFunc())
 	{
 		auth.GET("/hello", controllers.HelloHandler)

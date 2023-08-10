@@ -2,8 +2,7 @@ package controllers
 
 import (
 	"bookstore/models"
-	"net/http"
-
+	"bookstore/services"
 	jwt "github.com/appleboy/gin-jwt/v2"
 	"github.com/gin-gonic/gin"
 )
@@ -18,13 +17,17 @@ func LoginHandler(c *gin.Context) (interface{}, error) {
 	var userLoginInput UserLoginInput
 
 	if err := c.ShouldBind(&userLoginInput); err != nil {
-		return "", jwt.ErrMissingLoginValues
+		return nil, jwt.ErrMissingLoginValues
 	}
 
 	if err := models.DB.Where("email = ?", userLoginInput.Email).Where("password = ?", userLoginInput.Password).First(&user).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "User not found!"})
 		return nil, jwt.ErrFailedAuthentication
 	}
 
-	return user, nil
+	return &services.LoggedUser{
+		ID:    user.ID,
+		Email: user.Email,
+		Role:  user.Role,
+		Name:  user.FirstName + " " + user.LastName,
+	}, nil
 }
