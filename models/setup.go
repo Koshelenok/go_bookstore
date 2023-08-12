@@ -17,6 +17,7 @@ func ConnectDatabase() {
 
 	err = database.AutoMigrate(&Book{})
 	err = database.AutoMigrate(&Author{})
+	err = database.AutoMigrate(&User{})
 	if err != nil {
 		return
 	}
