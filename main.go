@@ -36,6 +36,8 @@ func main() {
 
 		auth.GET("/author", controllers.FindAuthors)
 		auth.POST("/author", controllers.CreateAuthor)
+		auth.GET("/author/:id", controllers.FindAuthor)
+		auth.PATCH("/author/:id", controllers.UpdateAuthor)
 		auth.DELETE("/author/:id", controllers.DeleteAuthor)
 	}
 
