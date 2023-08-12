@@ -12,7 +12,10 @@ func main() {
 	r := gin.Default()
 
 	models.ConnectDatabase()
-	authMiddleware, _ := services.SetupAuth(controllers.LoginHandler)
+	authMiddleware, _ := services.SetupAuth(
+		controllers.LoginHandler,
+		controllers.AuthorizatorHandler,
+	)
 
 	r.POST("/api/login", authMiddleware.LoginHandler)
 

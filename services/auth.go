@@ -2,7 +2,6 @@ package services
 
 import (
 	"bookstore/models"
-	"fmt"
 	"log"
 	"time"
 
@@ -17,48 +16,36 @@ type LoggedUser struct {
 	Role  string
 }
 
-func SetupAuth(authenticatorHandler func(c *gin.Context) (interface{}, error)) (*jwt.GinJWTMiddleware, error) {
+var AuthIdentityKey = "user"
+
+func SetupAuth(
+	authenticatorHandler func(c *gin.Context) (interface{}, error),
+	authorizatorHandler func(data interface{}, с *gin.Context) bool,
+) (*jwt.GinJWTMiddleware, error) {
 	authMiddleware, err := jwt.New(&jwt.GinJWTMiddleware{
 		Realm:       "test zone",
 		Key:         []byte("secret key"),
 		Timeout:     time.Hour,
 		MaxRefresh:  time.Hour,
-		IdentityKey: models.UserIdkentityKey,
+		IdentityKey: AuthIdentityKey,
 		PayloadFunc: func(data interface{}) jwt.MapClaims {
-			fmt.Println("PayloadFunc ok!")
-
-			if v, ok := data.(*LoggedUser); ok {
-				fmt.Println("PayloadFunc ok!")
-				fmt.Println("PayloadFunc ok! v", v.Email, v.Name)
+			if v, ok := data.(*models.User); ok {
 				return jwt.MapClaims{
-					models.UserIdkentityKey: v.Email,
+					AuthIdentityKey: v.ID,
 				}
 			}
 			return jwt.MapClaims{}
 		},
 		IdentityHandler: func(c *gin.Context) interface{} {
-			fmt.Println("IdentityHandler")
 			claims := jwt.ExtractClaims(c)
-			return &LoggedUser{
-				Email: claims[models.UserIdkentityKey].(string),
+			id := claims[AuthIdentityKey].(float64)
+			return &models.User{
+				ID: uint(id),
 			}
 		},
 		Authenticator: authenticatorHandler,
-		Authorizator: func(data interface{}, c *gin.Context) bool {
-			fmt.Println("Authorizator")
-			v, ok := data.(*LoggedUser)
-
-			fmt.Println("Authorizator", data)
-			fmt.Println("Authorizator v", v.Role)
-
-			if ok && v.Email == "admin@server.com" {
-				return true
-			}
-
-			return false
-		},
+		Authorizator:  authorizatorHandler,
 		Unauthorized: func(c *gin.Context, code int, message string) {
-			fmt.Println("Unauthorized")
 			c.JSON(code, gin.H{
 				"code":    code,
 				"message": message,

@@ -2,7 +2,9 @@ package controllers
 
 import (
 	"bookstore/models"
-	"bookstore/services"
+	"fmt"
+	"strconv"
+
 	jwt "github.com/appleboy/gin-jwt/v2"
 	"github.com/gin-gonic/gin"
 )
@@ -24,10 +26,15 @@ func LoginHandler(c *gin.Context) (interface{}, error) {
 		return nil, jwt.ErrFailedAuthentication
 	}
 
-	return &services.LoggedUser{
-		ID:    user.ID,
-		Email: user.Email,
-		Role:  user.Role,
-		Name:  user.FirstName + " " + user.LastName,
-	}, nil
+	return &user, nil
+}
+
+func AuthorizatorHandler(data interface{}, c *gin.Context) bool {
+	v, ok := data.(*models.User)
+	fmt.Println("Auth ID #" + strconv.Itoa(int(v.ID)))
+	if ok {
+		return true
+	}
+
+	return false
 }
