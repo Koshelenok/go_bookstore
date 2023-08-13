@@ -6,6 +6,8 @@ import (
 	"bookstore/services"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
+	"github.com/go-playground/validator/v10"
 )
 
 func main() {
@@ -16,6 +18,10 @@ func main() {
 		controllers.LoginHandler,
 		controllers.AuthorizatorHandler,
 	)
+
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		v.RegisterValidation("authorvalidator", controllers.AuthorValidator)
+	}
 
 	r.POST("/api/login", authMiddleware.LoginHandler)
 

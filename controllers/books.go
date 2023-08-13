@@ -2,19 +2,31 @@ package controllers
 
 import (
 	"bookstore/models"
+	authorService "bookstore/services/author"
+	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 )
 
 type CreateBookInput struct {
-	Title  string `form:"title" binding:"required"`
-	Author string `form:"author" binding:"required"`
+	Title       string `form:"title" binding:"required"`
+	Author      string `form:"author" binding:"authorvalidator"`
+	AuthorRefer uint   `form:"author_ref" binding:"authorvalidator"`
 }
 
 type UpdateBookUnput struct {
 	Title  string `form:"title"`
 	Author string `form:"author"`
+}
+
+var AuthorValidator validator.Func = func(fl validator.FieldLevel) bool {
+	input := fl.Parent().Interface().(CreateBookInput)
+	if input.AuthorRefer == 0 && !json.Valid([]byte(input.Author)) {
+		return false
+	}
+	return true
 }
 
 func CreateBook(c *gin.Context) {
@@ -24,7 +36,18 @@ func CreateBook(c *gin.Context) {
 		return
 	}
 
-	book := models.Book{Title: input.Title, Author: input.Author}
+	if input.AuthorRefer == 0 {
+		var authorInput CreateAuthorInput
+		json.Unmarshal([]byte(input.Author), &authorInput)
+		author := authorService.Create(
+			authorInput.FirstName,
+			authorInput.LastName,
+			authorInput.BirthDay,
+		)
+		input.AuthorRefer = author.ID
+	}
+
+	book := models.Book{Title: input.Title, AuthorRefer: input.AuthorRefer}
 	models.DB.Create(&book)
 
 	c.JSON(http.StatusOK, gin.H{"data": book})

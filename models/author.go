@@ -7,4 +7,5 @@ type Author struct {
 	FirstName string    `json:"first_name"`
 	LastName  string    `json:"last_name"`
 	BirthDay  time.Time `json:"birth_day"`
+	Books     []Book    `gorm:"foreignKey:AuthorRefer"`
 }

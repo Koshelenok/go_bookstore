@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"bookstore/models"
+	authorService "bookstore/services/author"
 	"net/http"
 	"time"
 
@@ -9,9 +10,9 @@ import (
 )
 
 type CreateAuthorInput struct {
-	FirstName string    `form:"first_name" binding:"required"`
-	LastName  string    `form:"last_name" binding:"required"`
-	BirthDay  time.Time `form:"birth_day" binding:"required"`
+	FirstName string    `form:"first_name" json:"first_name" binding:"required"`
+	LastName  string    `form:"last_name" json:"last_name" binding:"required"`
+	BirthDay  time.Time `form:"birth_day" json:"birth_day" binding:"required"`
 }
 
 type UpdateAuthorUnput struct {
@@ -27,13 +28,7 @@ func CreateAuthor(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
-	author := models.Author{
-		FirstName: input.FirstName,
-		LastName:  input.LastName,
-		BirthDay:  input.BirthDay,
-	}
-	models.DB.Create(&author)
+	author := authorService.Create(input.FirstName, input.LastName, input.BirthDay)
 
 	c.JSON(http.StatusOK, gin.H{"data": author})
 }
