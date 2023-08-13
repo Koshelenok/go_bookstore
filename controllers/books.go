@@ -11,9 +11,9 @@ import (
 )
 
 type CreateBookInput struct {
-	Title       string `form:"title" binding:"required"`
-	Author      string `form:"author" binding:"authorvalidator"`
-	AuthorRefer uint   `form:"author_ref" binding:"authorvalidator"`
+	Title    string `form:"title" binding:"required"`
+	Author   string `form:"author" binding:"authorvalidator"`
+	AuthorID uint   `form:"author_id" binding:"authorvalidator"`
 }
 
 type UpdateBookUnput struct {
@@ -23,7 +23,7 @@ type UpdateBookUnput struct {
 
 var AuthorValidator validator.Func = func(fl validator.FieldLevel) bool {
 	input := fl.Parent().Interface().(CreateBookInput)
-	if input.AuthorRefer == 0 && !json.Valid([]byte(input.Author)) {
+	if input.AuthorID == 0 && !json.Valid([]byte(input.Author)) {
 		return false
 	}
 	return true
@@ -36,7 +36,7 @@ func CreateBook(c *gin.Context) {
 		return
 	}
 
-	if input.AuthorRefer == 0 {
+	if input.AuthorID == 0 {
 		var authorInput CreateAuthorInput
 		json.Unmarshal([]byte(input.Author), &authorInput)
 		author := authorService.Create(
@@ -44,10 +44,10 @@ func CreateBook(c *gin.Context) {
 			authorInput.LastName,
 			authorInput.BirthDay,
 		)
-		input.AuthorRefer = author.ID
+		input.AuthorID = author.ID
 	}
 
-	book := models.Book{Title: input.Title, AuthorRefer: input.AuthorRefer}
+	book := models.Book{Title: input.Title, AuthorID: input.AuthorID}
 	models.DB.Create(&book)
 
 	c.JSON(http.StatusOK, gin.H{"data": book})
