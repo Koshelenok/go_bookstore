@@ -36,7 +36,10 @@ func DeleteAuthor(c *gin.Context) {
 	}
 
 	author, err := authorService.GetById(id)
-
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
 	models.DB.Delete(&author)
 
 	c.JSON(http.StatusOK, gin.H{"data": true})
@@ -59,9 +62,9 @@ func UpdateAuthor(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
 
-	id, err := strconv.Atoi(c.Param("id"))
+	id, err := getIDParam(c)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "incorrect ID parameter"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
