@@ -3,17 +3,11 @@ package controllers
 import (
 	"bookstore/models"
 	authorService "bookstore/services/author"
-	"net/http"
-	"time"
-
+	"fmt"
 	"github.com/gin-gonic/gin"
+	"net/http"
+	"strconv"
 )
-
-type UpdateAuthorUnput struct {
-	FirstName string    `form:"first_name"`
-	LastName  string    `form:"last_name"`
-	BirthDay  time.Time `form:"birth_day"`
-}
 
 func CreateAuthor(c *gin.Context) {
 	var input authorService.CreateAuthorInput
@@ -35,11 +29,13 @@ func FindAuthors(c *gin.Context) {
 }
 
 func DeleteAuthor(c *gin.Context) {
-	var author models.Author
-	if err := models.DB.Where("id = ?", c.Param("id")).First(&author).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Record not found!"})
+	id, err := getIDParam(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	author, err := authorService.GetById(id)
 
 	models.DB.Delete(&author)
 
@@ -58,19 +54,34 @@ func FindAuthor(c *gin.Context) { // Get model if exist
 }
 
 func UpdateAuthor(c *gin.Context) {
-	var author models.Author
-
-	if err := models.DB.Where("id = ?", c.Param("id")).First(&author).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Record not found!"})
-		return
-	}
-
-	var input UpdateAuthorUnput
+	var input authorService.UpdateAuthorInput
 	if err := c.Bind(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
 
-	models.DB.Model(&author).Updates(input)
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "incorrect ID parameter"})
+		return
+	}
+
+	author, err := authorService.Update(
+		id,
+		input,
+	)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{"data": author})
+}
+
+func getIDParam(c *gin.Context) (id int, err error) {
+	rawID := c.Param("id")
+	parsedID, err := strconv.Atoi(rawID)
+	if err != nil {
+		return 0, fmt.Errorf("incorrect ID parameter")
+	}
+	return parsedID, nil
 }
