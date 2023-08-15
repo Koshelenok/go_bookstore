@@ -37,12 +37,10 @@ func CreateBook(c *gin.Context) {
 	}
 
 	if input.AuthorID == 0 {
-		var authorInput CreateAuthorInput
+		var authorInput authorService.CreateAuthorInput
 		json.Unmarshal([]byte(input.Author), &authorInput)
 		author := authorService.Create(
-			authorInput.FirstName,
-			authorInput.LastName,
-			authorInput.BirthDay,
+			authorInput,
 		)
 		input.AuthorID = author.ID
 	}
