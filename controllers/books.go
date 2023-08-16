@@ -2,84 +2,10 @@ package controllers
 
 import (
 	"bookstore/models"
-	authorService "bookstore/services/author"
-	"encoding/json"
-	"net/http"
-
+	bookService "bookstore/services/book"
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
+	"net/http"
 )
-
-type CreateBookInput struct {
-	Title    string `form:"title" binding:"required"`
-	Author   string `form:"author" binding:"authorvalidator"`
-	AuthorID uint   `form:"author_id" binding:"authorvalidator"`
-}
-
-type UpdateBookUnput struct {
-	Title  string `form:"title"`
-	Author string `form:"author"`
-}
-
-var AuthorValidator validator.Func = func(fl validator.FieldLevel) bool {
-	input := fl.Parent().Interface().(CreateBookInput)
-	if input.AuthorID == 0 && !json.Valid([]byte(input.Author)) {
-		return false
-	}
-	return true
-}
-
-func CreateBook(c *gin.Context) {
-	var input CreateBookInput
-	if err := c.Bind(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	if input.AuthorID == 0 {
-		var authorInput authorService.CreateAuthorInput
-		json.Unmarshal([]byte(input.Author), &authorInput)
-		author := authorService.Create(
-			authorInput,
-		)
-		input.AuthorID = author.ID
-	}
-
-	book := models.Book{Title: input.Title, AuthorID: input.AuthorID}
-	models.DB.Create(&book)
-
-	c.JSON(http.StatusOK, gin.H{"data": book})
-}
-
-func UpdateBook(c *gin.Context) {
-	var book models.Book
-
-	if err := models.DB.Where("id = ?", c.Param("id")).First(&book).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Record not found!"})
-		return
-	}
-
-	var input UpdateBookUnput
-	if err := c.Bind(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-	}
-
-	models.DB.Model(&book).Updates(input)
-
-	c.JSON(http.StatusOK, gin.H{"data": book})
-}
-
-func DeleteBook(c *gin.Context) {
-	var book models.Book
-	if err := models.DB.Where("id = ?", c.Param("id")).First(&book).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Record not found!"})
-		return
-	}
-
-	models.DB.Delete(&book)
-
-	c.JSON(http.StatusOK, gin.H{"data": true})
-}
 
 func FindBooks(c *gin.Context) {
 	var books []models.Book
@@ -89,12 +15,71 @@ func FindBooks(c *gin.Context) {
 }
 
 func FindBook(c *gin.Context) { // Get model if exist
-	var book models.Book
+	id, err := getIDParam(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 
-	if err := models.DB.Where("id = ?", c.Param("id")).First(&book).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Record not found!"})
+	book, err := bookService.GetById(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": book})
+}
+
+func CreateBook(c *gin.Context) {
+	var input bookService.CreateBookInput
+
+	if err := c.Bind(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	book := bookService.Create(input)
+
+	c.JSON(http.StatusOK, gin.H{"data": book})
+}
+
+func UpdateBook(c *gin.Context) {
+	var input bookService.UpdateBookInput
+	if err := c.Bind(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	id, err := getIDParam(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	book, err := bookService.Update(
+		id,
+		input,
+	)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": book})
+}
+
+func DeleteBook(c *gin.Context) {
+	id, err := getIDParam(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	book, err := bookService.GetById(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	models.DB.Delete(&book)
+
+	c.JSON(http.StatusOK, gin.H{"data": true})
 }

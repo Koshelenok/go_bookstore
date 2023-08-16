@@ -4,6 +4,7 @@ import (
 	"bookstore/controllers"
 	"bookstore/models"
 	"bookstore/services"
+	bookService "bookstore/services/book"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -20,7 +21,7 @@ func main() {
 	)
 
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
-		v.RegisterValidation("authorvalidator", controllers.AuthorValidator)
+		v.RegisterValidation("authorvalidator", bookService.AuthorValidator)
 	}
 
 	r.POST("/api/login", authMiddleware.LoginHandler)
