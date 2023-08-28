@@ -2,7 +2,9 @@ package controllers
 
 import (
 	"bookstore/models"
+	authorService "bookstore/services/author"
 	bookService "bookstore/services/book"
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -36,6 +38,11 @@ func CreateBook(c *gin.Context) {
 	if err := c.Bind(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+	if input.Author != "" && input.AuthorID == 0 {
+		var authorInput authorService.CreateAuthorInput
+		json.Unmarshal([]byte(input.Author), &authorInput)
+		input.AuthorID = authorService.Create(authorInput).ID
 	}
 	book := bookService.Create(input)
 
