@@ -19,7 +19,7 @@ type UpdateAuthorInput struct {
 }
 
 func GetById(id int) (author *models.Author, err error) {
-	if err := models.DB.Where("id = ?", id).First(&author).Error; err != nil {
+	if err := models.DB.Where("id = ?", id).Preload("Books").First(&author).Error; err != nil {
 		return nil, fmt.Errorf("record not found")
 	}
 	return author, nil

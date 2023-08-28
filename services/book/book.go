@@ -27,7 +27,7 @@ var AuthorValidator validator.Func = func(fl validator.FieldLevel) bool {
 }
 
 func GetById(id int) (book *models.Book, er error) {
-	if err := models.DB.Where("id = ?", id).First(&book).Error; err != nil {
+	if err := models.DB.Where("id = ?", id).Preload("Author").First(&book).Error; err != nil {
 		return nil, fmt.Errorf("record not found")
 	}
 	return book, nil
